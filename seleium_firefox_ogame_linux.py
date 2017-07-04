@@ -1,7 +1,5 @@
 # coding=UTF-8
 
-import browser_cookie
-import requests
 import bs4
 import sys
 from selenium.webdriver.support.ui import Select
