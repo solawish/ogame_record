@@ -6,22 +6,24 @@ from selenium.webdriver.support.ui import Select
 from selenium import webdriver
 import logging
 import MySQLdb
+import os
+import time
 
 login_account = "xxxx"  #ogame account
-login_password = "xxxx" #ogame password
+login_password = "xxxxxx" #ogame password
 
 server_name = 'Rigel'
 server_value = 's118-tw.ogame.gameforge.com'
 
-sql_db_ip = "xxx.xxx.xxx.xxx"
+sql_db_ip = "127.0.0.1"
 sql_db = "ogame_data"
 sql_db_table = "light_data"
 sql_db_user = "xxxx"
 sql_db_password = "xxxx"
 
-ogame_url = 'http://ogame.tw'
+ogame_url = 'https://tw.ogame.gameforge.com/'
 
-target_coordinate = ["1.1.1","1.499.1"] #target coordinate
+target_coordinate = ["1.1.1.","1.2.3"] #target coordinate
 
 
 def check_login(title):#check login success or not
@@ -106,7 +108,8 @@ def send_log_to_mysql(item): #insert log to mysql
 		db.rollback()
 		logging.warning("Log To Mysql ERROR")
 		#print "error"
-	db.close
+	cursor.close()
+	db.close()
 
 def trans_coordinate(item): #trans "1.1.1" to dict format (payload = {'page' : 'galaxy','galaxy' : '1','system' : '1','position':'1'})
 
@@ -134,10 +137,13 @@ def parsing_each_target_data(driver, item): #each target will pasing and collect
 	driver = go_galaxy_page(driver,payload)
 	logging.info("Go To Galaxy Page [" + item + "]")
 
+	
+	time.sleep(2) #wait for 2 second(test)
 	#get galaxy data
 	soup = bs4.BeautifulSoup(driver.page_source) 
 	logging.info("Get Galaxy Data!")
 
+	
 	#get galaxy table
 	rows =  soup.find("table",{"id":"galaxytable"}).tbody.find_all('tr')
 	
@@ -182,6 +188,7 @@ if __name__ == '__main__':
 	
 	#open firefox
 	driver = webdriver.Firefox() 
+	driver.set_window_position(-3000, 0)#hide window
 	logging.info('Open Firefox')
 
 	#login
@@ -213,6 +220,8 @@ if __name__ == '__main__':
 		send_log_to_mysql(item)
 
 	driver.close()
+	os.system('taskkill /F /IM geckodriver.exe')
+	sys.exit()
 	
 	
 
