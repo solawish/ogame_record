@@ -19,11 +19,11 @@ sql_db_ip = "127.0.0.1"
 sql_db = "ogame_data"
 sql_db_table = "light_data"
 sql_db_user = "xxxx"
-sql_db_password = "xxxx"
+sql_db_password = "xxxxxx"
 
 ogame_url = 'https://tw.ogame.gameforge.com/'
 
-target_coordinate = ["1.1.1.","1.2.3"] #target coordinate
+target_coordinate = ["1.2.3","2.3.4"] #target coordinate
 
 
 def check_login(title):#check login success or not
@@ -140,7 +140,7 @@ def parsing_each_target_data(driver, item): #each target will pasing and collect
 	
 	time.sleep(2) #wait for 2 second(test)
 	#get galaxy data
-	soup = bs4.BeautifulSoup(driver.page_source) 
+	soup = bs4.BeautifulSoup(driver.page_source, 'html.parser') 
 	logging.info("Get Galaxy Data!")
 
 	
@@ -193,10 +193,10 @@ if __name__ == '__main__':
 
 	#login
 	driver = login_ogame(driver) 
-	logging.info('Login Ogame')
+	logging.info('Login Ogame...')
 
 	#put to soup
-	soup = bs4.BeautifulSoup(driver.page_source) 
+	soup = bs4.BeautifulSoup(driver.page_source, 'html.parser') 
 
 	#check login success or not
 	if check_login(soup.title.text) == 1: 
