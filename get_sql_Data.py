@@ -139,6 +139,8 @@ def add_info_to_json(userID,userID_coordinate,type,planet_json,yesterday_date): 
 	
 def push_to_github():#use push command to push data to github
 
+	''' befroe do this , need to add new folder, do "git init", pull the git, do "git remote add name url" .'''
+	
 	date = get_yestreday_date()
 	
 	#enter project folder
