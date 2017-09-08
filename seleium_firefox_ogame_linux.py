@@ -8,22 +8,24 @@ import logging
 import MySQLdb
 import os
 import time
+import unicodedata
 
-login_account = "xxxx"  #ogame account
+login_email = "xxxxxx@xxx.xxx" #ogame email
+login_account = "xxxxxx"  #ogame account
 login_password = "xxxxxx" #ogame password
 
-server_name = 'Rigel'
-server_value = 's118-tw.ogame.gameforge.com'
+server_name = 'Orion'
+server_value = 's115-tw.ogame.gameforge.com'
 
 sql_db_ip = "127.0.0.1"
 sql_db = "ogame_data"
 sql_db_table = "light_data"
-sql_db_user = "xxxx"
-sql_db_password = "xxxxxx"
+sql_db_user = "xxxxxx"
+sql_db_password = "xxxxxxxxx"
 
 ogame_url = 'https://tw.ogame.gameforge.com/'
 
-target_coordinate = ["1.2.3","2.3.4"] #target coordinate
+target_coordinate = ["1.2.3", "1.3.5"] #target coordinate
 
 
 def check_login(title):#check login success or not
@@ -37,10 +39,18 @@ def check_login(title):#check login success or not
 def login_ogame(driver): #login
 	
 	driver.get(ogame_url) #go to ogame website
+	'''new version (53 and up) firefox btn click() not work'''
+	
+	#driver.get(ogame_url + '/main/loginError/?kid=&error=2') #go to ogame website with open login form
+	
 	driver.find_element_by_id('loginBtn').click() #click login button
-
+	#driver.find_element_by_link_text(u'登入').click() #click login button by text ## in this version firefox, click element can't work, it's a exist bug
+	#driver.find_element_by_id('loginBtn').enter()
+	
 	account = driver.find_element_by_id('usernameLogin') #find account element and key in
-	account.send_keys(login_account)
+	#account.send_keys(login_account)
+	account.send_keys(login_email) #ogame new rule : only use email to login
+
 
 	password = driver.find_element_by_id('passwordLogin') #find password element and key in
 	password.send_keys(login_password)
@@ -54,10 +64,29 @@ def login_ogame(driver): #login
 
 def go_galaxy_page(driver,payload): #Get galaxy page
 
-	url = 'https://s118-tw.ogame.gameforge.com/game/index.php' #basic url
+	url = 'https://' + server_value + '/game/index.php' #basic url
 	
 	temp_url = ""
 
+	for item in payload: #format url with GET method
+		temp_url += item + "=" + payload[item] + "&"
+
+	temp_url = "?" + temp_url[:-1] #remove last "&" and add "?" at thr first
+
+	driver.get(url + temp_url)
+
+	return driver
+	
+def go_galaxy_page_with_api(driver,payload): #Get galaxy page (new one : use galaxy api address)
+
+	url = 'https://' + server_value + '/game/index.php' #basic url
+	
+	temp_url = ""
+
+	#for galaxy api address params
+	payload['page'] = 'galaxyContent'
+	payload['ajax'] = '1'
+	
 	for item in payload: #format url with GET method
 		temp_url += item + "=" + payload[item] + "&"
 
@@ -133,19 +162,20 @@ def parsing_each_target_data(driver, item): #each target will pasing and collect
 	#--------------------
 	logging.info("------------------------------------")
 
+	
 	#go to galaxy page
 	driver = go_galaxy_page(driver,payload)
+	#driver = go_galaxy_page_with_api(driver,payload)
 	logging.info("Go To Galaxy Page [" + item + "]")
 
-	
-	time.sleep(2) #wait for 2 second(test)
+	#wait for 2 second(test)
+	time.sleep(2) 
 	#get galaxy data
 	soup = bs4.BeautifulSoup(driver.page_source, 'html.parser') 
 	logging.info("Get Galaxy Data!")
-
 	
 	#get galaxy table
-	rows =  soup.find("table",{"id":"galaxytable"}).tbody.find_all('tr')
+	rows = soup.find("table",{"id":"galaxytable"}).tbody.find_all('tr')
 	
 	#target row data  cols = |No.|planet|planet_name|moon|debris|userID|ally|someItem
 	cols = rows[int(payload["position"])-1].find_all('td') 
@@ -183,18 +213,24 @@ def parsing_each_target_data(driver, item): #each target will pasing and collect
 
 if __name__ == '__main__':
 	
+	start = time.time()
+	
 	#set logging lecel
 	logging.basicConfig(level=logging.INFO)
 	
 	#open firefox
+	logging.info('Open Firefox...')
 	driver = webdriver.Firefox() 
-	driver.set_window_position(-3000, 0)#hide window
-	logging.info('Open Firefox')
-
+	
+	#hide window
+	#driver.set_window_position(-3000, 0)
+	#driver.set_window_size(640,480)
+	
 	#login
-	driver = login_ogame(driver) 
 	logging.info('Login Ogame...')
-
+	driver = login_ogame(driver) 
+	
+	time.sleep(5)
 	#put to soup
 	soup = bs4.BeautifulSoup(driver.page_source, 'html.parser') 
 
@@ -219,8 +255,14 @@ if __name__ == '__main__':
 	for item in result:
 		send_log_to_mysql(item)
 
+		
+	end = time.time()
+	elapsed = end - start
+	print "Time taken: ", elapsed, "seconds."	
+	
 	driver.close()
 	os.system('taskkill /F /IM geckodriver.exe')
+	os.system('taskkill /F /IM firefox.exe')
 	sys.exit()
 	
 	
